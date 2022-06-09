@@ -1,6 +1,6 @@
 """
 해야할 일
-- 같은 one pair일 때, highest value가 pair에 해당하는 값인지 다시 확인
+- 같은 one pair일 때, highest value가 pair에 해당하는 값인지 다시 확
 - get hand's rank
 - invalid error raise(e.g. two royal flushes), 즉 Card shape의 order도 줘야하는지
 - total_ordering decorator사용하면 더 편리
@@ -11,6 +11,7 @@
 - if문의 순서가 확률적으로...
 - 10이 있는데, poker data 주는 쪽에서 처리해서 줘야하지 않나
 - card repr 바꾸기
+- test case 만들기
 """
 
 
