@@ -1,76 +1,165 @@
+"""
+해야할 일
+- get hand's rank
+- invalid error raise(e.g. two royal flushes), 즉 Card shape의 order도 줘야하는지
+- total_ordering decorator사용하면 더 편리
+- private
+- 주석
+- type hinting
+- 디버깅 모드
+- if문의 순서가 확률적으로...
+- 10이 있는데, poker data 주는 쪽에서 처리해서 줘야하지 않나
+"""
+
+
 class Card:
     ranking = {
-        "2": 1,
-        "3": 2,
-        "4": 3,
-        "5": 4,
-        "6": 5,
-        "7": 6,
-        "8": 7,
-        "9": 8,
-        "T": 9,
-        "J": 10,
-        "Q": 11,
-        "K": 12,
-        "A": 13,
+        "2": 0,
+        "3": 1,
+        "4": 2,
+        "5": 3,
+        "6": 4,
+        "7": 5,
+        "8": 6,
+        "9": 7,
+        "T": 8,
+        "J": 9,
+        "Q": 10,
+        "K": 11,
+        "A": 12,
     }
+
     def __init__(self, value_shape):
-        self.value, self.shape = value_shape
+        self.value, self.shape = value_shape[0], value_shape[1]
+
+    def __lt__(self, another_card):
+        return self.ranking[self.value] < self.ranking[another_card.value]
 
 
 class Hand:
-
     ranking = {
-        "High Card": 1,
-        "One Pair": 2,
-        "Two Pairs": 3,
-        "Three of a Kind": 4,
-        "Straight": 5,
-        "Flush": 6,
-        "Full House": 7,
-        "Four of a Kind": 8,
-        "Straight Flush": 9,
-        "Royal Flush": 10,
+        "High Card": 0,
+        "One Pair": 1,
+        "Two Pairs": 2,
+        "Three of a Kind": 3,
+        "Straight": 4,
+        "Flush": 5,
+        "Full House": 6,
+        "Four of a Kind": 7,
+        "Straight Flush": 8,
+        "Royal Flush": 9,
     }
 
-    def __init__(self, five_value_shapes):
-        """initialize hand instance.
-
-        :param five_value_shapes: five value_shape with delimeter one space
-        :type five_value_shapes: str
-        """
-        self.cards = [Card(x) for x in five_value_shapes.split(" ")]
+    def __init__(self, *value_shapes):
+        self.cards = sorted([Card(value_shape) for value_shape in value_shapes])
+        self.values_counter = dict()
+        self.shapes_counter = dict()
+        for card in self.cards:
+            if card.value in self.values_counter:
+                self.values_counter[card.value] += 1
+            else:
+                self.values_counter[card.value] = 1
+            if card.shape in self.shapes_counter:
+                self.shapes_counter[card.shape] += 1
+            else:
+                self.shapes_counter[card.shape] = 1
+        self.shape_repeated_count_descending = sorted(self.shapes_counter.values(), reverse=True)
+        self.value_repeated_count_descending = sorted(self.values_counter.values(), reverse=True)
         self.rank = self.get_rank()
 
+    # def set_ordered_cards(self):
+    #     if not self.ordered_cards:
+    #         self.ordered_cards = sorted(self.cards)
+
     def get_rank(self):
-        ...
+        is_flush = self.shape_repeated_count_descending[0] == 5
+        first_frequent_value_count = self.value_repeated_count_descending[0]
+        # print(self.cards)
+        second_frequent_value_count = self.value_repeated_count_descending[1]
+        if first_frequent_value_count == 1:
+            if self.is_straight():
+                if is_flush:
+                    if "T" in self.values_counter and "A" in self.values_counter:
+                        return self.ranking["Royal Flush"]
+                    else:
+                        return self.ranking["Straight Flush"]
+                return self.ranking["Straight"]
+            if is_flush:
+                return self.ranking["Flush"]
+            return self.ranking["High Card"]
+        if first_frequent_value_count == 2:
+            if second_frequent_value_count == 1:
+                return self.ranking["One Pair"]
+            if second_frequent_value_count == 2:
+                return self.ranking["Two Pairs"]
+        if first_frequent_value_count == 3:
+            if second_frequent_value_count == 1:
+                return self.ranking["Three of a Kind"]
+            if second_frequent_value_count == 2:
+                return self.ranking["Full House"]
+        if first_frequent_value_count == 4:
+            return self.ranking["Four of a Kind"]
 
-    def is_high_card(self):
-
-    def __repr__(self):
-        ...
-
-    def __str__(self):
-        ...
-
-
-
-    def __lt__(self, another_cards):
-        # different rank
-
-        # same rank
-        ...
-
-    @staticmethod
-    def tie_breaker(cards_one, cards_two):
-        ...
+    def is_straight(self):
+        # self.set_ordered_cards()
+        if ((Card.ranking[self.cards[1].value] - Card.ranking[self.cards[0].value] == 1) and
+                (Card.ranking[self.cards[2].value] - Card.ranking[self.cards[1].value] == 1) and
+                (Card.ranking[self.cards[3].value] - Card.ranking[self.cards[2].value] == 1) and
+                (Card.ranking[self.cards[4].value] - Card.ranking[self.cards[3].value] == 1)):
+            return True
+        if ((self.cards[0].value == "2") and
+                (self.cards[1].value == "3") and
+                (self.cards[2].value == "4") and
+                (self.cards[3].value == "5") and
+                (self.cards[4].value == "A")):
+            return True
+        return False
 
 
-    def get_card_order_by_value(self):
-        ...
+    # def __repr__(self):
+    #     ...
+    #
+    # def __str__(self):
+    #     ...
+
+    def __lt__(self, another_hand):
+        if self.rank < another_hand.rank:
+            return True
+        if self.rank > another_hand.rank:
+            return False
+        for ind in range(len(self.cards)):
+            if self.cards[ind] < another_hand.cards[ind]:
+                return True
+            elif another_hand.cards[ind] < self.cards[ind]:
+                return False
+
+        # self.set_ordered_cards()
+        # while 1:
+        #     ordered_card = self.gen_card_order_by_ranking()
+        #     another_ordered_card = another_hand.gen_card_order_by_ranking()
+        #     if ordered_card < another_ordered_card:
+        #         return True
+        #     elif ordered_card > another_ordered_card:
+        #         return False
+        #     continue
+
+    # def gen_card_order_by_ranking(self):
+    #     self.set_ordered_cards()
+    #     for card in self.ordered_cards:
+    #         yield card
 
 
 if __name__ == '__main__':
-    #
+    nth_poker = 5
+    result = 0
+
     with open('poker.txt', 'r') as history:
+        for game in history.readlines():
+            value_shapes = [x.replace("10", "T") for x in game.split()]
+            player_1_value_shapes, player_2_value_shapes = value_shapes[:nth_poker], value_shapes[nth_poker:]
+            player_1_hand, player_2_hand = Hand(*player_1_value_shapes), Hand(*player_2_value_shapes)
+            if player_2_hand < player_1_hand:
+                result += 1
+
+    print(result)
 
